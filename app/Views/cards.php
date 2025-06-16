@@ -18,7 +18,7 @@
         <div class="mb-3">
             <button id="deal_btn" class="btn btn-sm btn-outline-primary mt2">Deal</button>
         </div>
-        <div id="player-container"></div>
+        <div id="player_container" class="border rounded p-3 text-start bg-light" style="max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap;"></div>
     </div>
 </body>
 <script>
@@ -41,10 +41,10 @@
                 data: { players: value },
                 success: function (response) {
                     const html = response.replace(/\n/g, "<br>");
-                    $('#player-container').html(html);
+                    $('#player_container').html(html);
                 },
                 error: function (xhr, status, error) {
-                    $('#player-container').text("Error: " + error);
+                    $('#player_container').text("Error: " + error);
                 }
             });
         });
