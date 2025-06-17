@@ -34,3 +34,47 @@ WHERE EXISTS (
     WHERE jp.job_id = Jobs.id
 )
 ```
+
+## Large WHERE condition
+The complex nature of `LIKE` means performance will suffer when it comes to long condition. Because it has to scan multiple table and many columns with `LIKE` condition.
+```sql
+WHERE (
+  JobCategories.name LIKE '%キャビンアテンダント%' OR
+  JobTypes.name LIKE '%キャビンアテンダント%' OR
+  Jobs.name LIKE '%キャビンアテンダント%' OR
+  Jobs.description LIKE '%キャビンアテンダント%' OR
+  ...
+)
+
+```
+
+## Sub query with UNION
+In order to reduce the performance impact, the query should split into simple sub query with `UNION`. Because of this simpler logic and condition MySQL optimizer will have and easier time to do its thing.
+```sql
+SELECT Jobs.id FROM Jobs WHERE Jobs.name LIKE '%キャビンアテンダント%'
+UNION
+SELECT Jobs.id FROM JobTypes WHERE JobTypes.name LIKE '%キャビンアテンダント%'
+UNION
+SELECT Jobs.id FROM JobCategories WHERE JobCategories.name LIKE '%キャビンアテンダント%'
+
+```
+
+## Add INDEX
+Works well when one or multiple column are commonly used to match `WHERE`. Like a bookmark, MySQL can jump straight to the known rows that associated with the matching `WHERE` condition rather than scanning all rows for potential match.
+```sql
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_jobs_type_status ON jobs(job_type_id, status);
+ALTER TABLE jobs ADD FULLTEXT(name);
+```
+
+## Use Temporary table
+For repeatedly used table, using `WITH` (MySQL v8.0 above) is desirable so that the repeated logic is only needed to be done once. Resulting in a much resource heavy query. Manual build of the table should be used if MySQL version is before version 8.0.
+```sql
+WITH FilteredJobs AS (
+  SELECT id, name FROM Jobs
+  WHERE publish_status = 1 AND deleted IS NULL
+)
+SELECT fj.id, jt.name
+FROM FilteredJobs fj
+JOIN job_types jt ON jt.id = fj.id;
+```
